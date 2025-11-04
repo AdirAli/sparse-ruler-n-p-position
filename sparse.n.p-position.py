@@ -37,10 +37,32 @@ def parse_sequence(s: str) -> list[int]:
     return sorted({int(p) for p in parts})
 
 
-def is_sparse(_marks: tuple[int, ...]) -> bool:
-    # Unused now (kept for compatibility). Always True since we removed the
-    # uniqueness constraint.
-    return True
+def is_sparse_ruler(state: tuple[int, ...], universe: tuple[int, ...]) -> bool:
+    """Return True when `state` is a (sparse) ruler for the given universe.
+
+    Definition used here: the set of positive pairwise differences of marks
+    in `state` covers every integer distance from 1 up to the full span of the
+    universe (max(universe)-min(universe)). In that case the marks can
+    represent any distance in the universe and we'll treat that state as a
+    P-position (terminal-like) per the requested rule.
+
+    Example: universe=(0,1,2,3,4), state=(0,1,2,4) has differences {1,2,3,4}
+    which covers 1..4 so it's a sparse ruler.
+    """
+    if not state:
+        return False
+    if not universe:
+        return False
+    span = max(universe) - min(universe)
+    if span <= 0:
+        return False
+    # compute positive differences between marks in the state
+    diffs = set()
+    for a, b in combinations(state, 2):
+        diffs.add(abs(a - b))
+    # need to cover all distances 1..span
+    needed = set(range(1, span + 1))
+    return needed.issubset(diffs)
 
 
 def legal_moves(universe: tuple[int, ...], state: tuple[int, ...]) -> list[int]:
@@ -61,8 +83,13 @@ def classify_all_states(universe: list[int]):
         moves = legal_moves(U, state)
 
         ####fix this logic to match new rule of the sparse ruler game 
-        
-        if not moves:
+        # If the current state already forms a sparse ruler for the universe,
+        # treat it as a P-position (player who moved to this state can be
+        # considered to have completed the ruler).
+        if is_sparse_ruler(state, U):
+            return "P"
+
+        if not_moves := (not moves):
             return "P"  # terminal
         # N if any move to P
         for x in moves:
@@ -103,6 +130,46 @@ def show_summary(universe: list[int], labels: dict[tuple[int, ...], str]):
         print(f"size {k}: {layer}")
 
 
+def export_mermaid(labels: dict[tuple[int, ...], str], universe: list[int], out_path: str) -> None:
+    """Export the decision tree as a Mermaid `graph TD` diagram.
+
+    Each state becomes a node with a short label (state string and N/P). Edges
+    represent legal moves. The generated `.mmd` file can be previewed in
+    editors that support Mermaid or converted to SVG with mermaid-cli.
+    """
+    # Assign simple unique ids to nodes (n0, n1, ...)
+    nodes = list(labels.keys())
+    id_map = {state: f"n{i}" for i, state in enumerate(nodes)}
+
+    def node_label(state: tuple[int, ...]) -> str:
+        lab = labels[state]
+        name = format_state(state)
+        # Escape quotes and newlines for Mermaid
+        text = name + "\\n" + lab
+        return text.replace('"', "'")
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("graph TD\n")
+        # Nodes
+        for state in nodes:
+            nid = id_map[state]
+            lbl = node_label(state)
+            # Use Mermaid quoted label syntax: n0["label"]
+            f.write(f"    {nid}[\"{lbl}\"]\n")
+        f.write("\n")
+        # Edges
+        U = tuple(sorted(universe))
+        for state in nodes:
+            src = id_map[state]
+            for x in legal_moves(U, state):
+                nxt = tuple(sorted((*state, x)))
+                if nxt in id_map:
+                    dst = id_map[nxt]
+                    f.write(f"    {src} --> {dst}\n")
+
+    print(f"Wrote Mermaid file: {out_path}")
+
+
 def main():
     seq = input("Enter sequence (e.g., 01234 or 0,1,2,3): ").strip()
     universe = parse_sequence(seq)
@@ -111,6 +178,14 @@ def main():
         return
     labels = classify_all_states(universe)
     show_summary(universe, labels)
+    # Export a Mermaid file for visualization
+    # sanitize sequence string for filename
+    seq_name = "".join(str(x) for x in universe)
+    out_fn = f"decision_tree_{seq_name}.mmd"
+    try:
+        export_mermaid(labels, universe, out_fn)
+    except Exception as e:
+        print(f"Failed to write Mermaid file: {e}")
 
 
 if __name__ == "__main__":
