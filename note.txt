@@ -1,0 +1,3 @@
+to do: 
+- fix the png logic 
+- use python3 -m https.server 8000

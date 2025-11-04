@@ -130,45 +130,45 @@ def show_summary(universe: list[int], labels: dict[tuple[int, ...], str]):
         print(f"size {k}: {layer}")
 
 
-def export_mermaid(labels: dict[tuple[int, ...], str], universe: list[int], out_path: str) -> None:
-    """Export the decision tree as a Mermaid `graph TD` diagram.
+# (diagram export removed)
 
-    Each state becomes a node with a short label (state string and N/P). Edges
-    represent legal moves. The generated `.mmd` file can be previewed in
-    editors that support Mermaid or converted to SVG with mermaid-cli.
+
+def export_dot(labels: dict[tuple[int, ...], str], universe: list[int], out_path: str) -> None:
+    """Write a Graphviz DOT file representing the decision tree.
+
+    nodes are assigned short ids n0, n1, ...; node labels contain the
+    state (concatenated marks or ∅) and the N/P mark on the next line.
     """
-    # Assign simple unique ids to nodes (n0, n1, ...)
     nodes = list(labels.keys())
     id_map = {state: f"n{i}" for i, state in enumerate(nodes)}
 
-    def node_label(state: tuple[int, ...]) -> str:
+    def label_text(state: tuple[int, ...]) -> str:
         lab = labels[state]
         name = format_state(state)
-        # Escape quotes and newlines for Mermaid
-        text = name + "\\n" + lab
-        return text.replace('"', "'")
+        return f"{name}\n{lab}"
 
     with open(out_path, "w", encoding="utf-8") as f:
-        f.write("graph TD\n")
-        # Nodes
-        for state in nodes:
-            nid = id_map[state]
-            lbl = node_label(state)
-            # Use Mermaid quoted label syntax: n0["label"]
-            f.write(f"    {nid}[\"{lbl}\"]\n")
+        f.write("digraph G {\n")
+        f.write("  rankdir=TB;\n")
+        f.write("  node [shape=box, fontsize=10];\n")
+        # nodes
+        for s in nodes:
+            nid = id_map[s]
+            lbl = label_text(s).replace('"', "'").replace("\n", "\\n")
+            f.write(f"  {nid} [label=\"{lbl}\"];\n")
         f.write("\n")
-        # Edges
+        # edges
         U = tuple(sorted(universe))
-        for state in nodes:
-            src = id_map[state]
-            for x in legal_moves(U, state):
-                nxt = tuple(sorted((*state, x)))
+        for s in nodes:
+            src = id_map[s]
+            for x in legal_moves(U, s):
+                nxt = tuple(sorted((*s, x)))
                 if nxt in id_map:
                     dst = id_map[nxt]
-                    f.write(f"    {src} --> {dst}\n")
+                    f.write(f"  {src} -> {dst};\n")
+        f.write("}\n")
 
-    print(f"Wrote Mermaid file: {out_path}")
-
+    print(f"Wrote DOT file: {out_path}")
 
 def main():
     seq = input("Enter sequence (e.g., 01234 or 0,1,2,3): ").strip()
@@ -178,14 +178,7 @@ def main():
         return
     labels = classify_all_states(universe)
     show_summary(universe, labels)
-    # Export a Mermaid file for visualization
-    # sanitize sequence string for filename
-    seq_name = "".join(str(x) for x in universe)
-    out_fn = f"decision_tree_{seq_name}.mmd"
-    try:
-        export_mermaid(labels, universe, out_fn)
-    except Exception as e:
-        print(f"Failed to write Mermaid file: {e}")
+    # (no external diagram file will be written)
 
 
 if __name__ == "__main__":
