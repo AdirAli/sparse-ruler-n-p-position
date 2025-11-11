@@ -160,6 +160,13 @@ def export_dot(labels: dict[tuple[int, ...], str], universe: list[int], out_path
         # edges
         U = tuple(sorted(universe))
         for s in nodes:
+            # skip drawing outgoing edges from states that already form a
+            # sparse ruler or from states that have no legal moves (true
+            # terminals). This prevents arrows from terminal-like nodes to
+            # larger states (e.g., 013 -> 0123) when 013 is considered a
+            # sparse-ruler terminal.
+            if is_sparse_ruler(s, U) or not legal_moves(U, s):
+                continue
             src = id_map[s]
             for x in legal_moves(U, s):
                 nxt = tuple(sorted((*s, x)))
@@ -178,7 +185,8 @@ def main():
         return
     labels = classify_all_states(universe)
     show_summary(universe, labels)
-    # (no external diagram file will be written)
+    # write a Graphviz DOT file so the decision tree can be rendered
+    export_dot(labels, universe, "graph.dot")
 
 
 if __name__ == "__main__":
