@@ -149,6 +149,8 @@ def export_dot(labels: dict[tuple[int, ...], str], universe: list[int], out_path
         name = format_state(state)
         return f"{name}\n{lab}"
 
+    U = tuple(sorted(universe))
+
     with open(out_path, "w", encoding="utf-8") as f:
         f.write("digraph G {\n")
         f.write("  rankdir=TB;\n")
@@ -157,7 +159,13 @@ def export_dot(labels: dict[tuple[int, ...], str], universe: list[int], out_path
         for s in nodes:
             nid = id_map[s]
             lbl = label_text(s).replace('"', "'").replace("\n", "\\n")
-            f.write(f"  {nid} [label=\"{lbl}\"];\n")
+            # highlight terminal-like nodes (sparse-ruler or no legal moves)
+            attrs = []
+            if is_sparse_ruler(s, U) or not legal_moves(U, s):
+                attrs.append("style=filled")
+                attrs.append("fillcolor=yellow")
+            attrs_str = (", " + ", ".join(attrs)) if attrs else ""
+            f.write(f"  {nid} [label=\"{lbl}\"{attrs_str}];\n")
         f.write("\n")
         # edges
         U = tuple(sorted(universe))
@@ -174,7 +182,13 @@ def export_dot(labels: dict[tuple[int, ...], str], universe: list[int], out_path
                 nxt = tuple(sorted((*s, x)))
                 if nxt in id_map:
                     dst = id_map[nxt]
-                    f.write(f"  {src} -> {dst};\n")
+                    # color edge green when moving from an N-position to a P-position
+                    src_lab = labels[s]
+                    dst_lab = labels.get(nxt, "")
+                    if src_lab == "N" and dst_lab == "P":
+                        f.write(f"  {src} -> {dst} [color=green, penwidth=2.0];\n")
+                    else:
+                        f.write(f"  {src} -> {dst};\n")
         f.write("}\n")
 
     print(f"Wrote DOT file: {out_path}")
