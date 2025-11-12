@@ -21,6 +21,8 @@ classification of all reachable game states grouped by size.
 from collections import defaultdict
 from functools import lru_cache
 from itertools import combinations
+import os
+import subprocess
 
 
 def parse_sequence(s: str) -> list[int]:
@@ -185,8 +187,21 @@ def main():
         return
     labels = classify_all_states(universe)
     show_summary(universe, labels)
-    # write a Graphviz DOT file so the decision tree can be rendered
-    export_dot(labels, universe, "graph.dot")
+    # write a Graphviz DOT file and render PNG into the game_tree/ folder
+    seq_str = "".join(str(x) for x in universe)
+    out_dir = "game_tree"
+    os.makedirs(out_dir, exist_ok=True)
+    dot_path = f"{out_dir}/decision_tree_{seq_str}.dot"
+    png_path = f"{out_dir}/decision_tree_{seq_str}.png"
+    export_dot(labels, universe, dot_path)
+    # try to render PNG via Graphviz 'dot' if available
+    try:
+        subprocess.run(["dot", "-Tpng", dot_path, "-o", png_path], check=True)
+        print(f"Wrote PNG file: {png_path}")
+    except FileNotFoundError:
+        print("Graphviz 'dot' not found; skipping PNG generation.")
+    except subprocess.CalledProcessError as e:
+        print(f"'dot' failed to render PNG: {e}; DOT written at {dot_path}")
 
 
 if __name__ == "__main__":
