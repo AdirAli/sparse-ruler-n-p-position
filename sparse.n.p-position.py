@@ -159,11 +159,19 @@ def export_dot(labels: dict[tuple[int, ...], str], universe: list[int], out_path
         for s in nodes:
             nid = id_map[s]
             lbl = label_text(s).replace('"', "'").replace("\n", "\\n")
-            # highlight terminal-like nodes (sparse-ruler or no legal moves)
+            # Decide visual style:
+            # - terminal-like nodes (sparse-ruler or no legal moves) -> yellow
+            # - other P-positions (normal P-positions) -> blue
             attrs = []
-            if is_sparse_ruler(s, U) or not legal_moves(U, s):
+            terminal_like = is_sparse_ruler(s, U) or not legal_moves(U, s)
+            if terminal_like:
                 attrs.append("style=filled")
                 attrs.append("fillcolor=yellow")
+            else:
+                # non-terminal P-positions -> blue fill
+                if labels.get(s) == "P":
+                    attrs.append("style=filled")
+                    attrs.append("fillcolor=lightblue")
             attrs_str = (", " + ", ".join(attrs)) if attrs else ""
             f.write(f"  {nid} [label=\"{lbl}\"{attrs_str}];\n")
         f.write("\n")

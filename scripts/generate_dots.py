@@ -11,10 +11,11 @@ mod = importlib.util.module_from_spec(spec)
 loader.exec_module(mod)
 
 # universes to generate (as strings matching your earlier format)
-universes = ["01", "012", "0123", "01234", "012345"]
+universes = ["01", "012", "0123", "01234", "012345", "0123456", "01234567"]
 
 for seq in universes:
     u = mod.parse_sequence(seq)
     labels = mod.classify_all_states(u)
     out = f"decision_tree_{''.join(str(x) for x in u)}.dot"
     mod.export_dot(labels, u, out)
+                                         
