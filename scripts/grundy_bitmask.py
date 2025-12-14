@@ -1,7 +1,6 @@
 """Bitmask DP solver for the sparse-ruler Grundy computation.
 
-Usage:
-  python3 scripts/grundy_bitmask.py N
+
 
 Computes the Grundy (start position) for universe marks 0..N.
 This implementation uses integer masks and an efficient sparse-ruler

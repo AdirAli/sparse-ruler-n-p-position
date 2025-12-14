@@ -34,14 +34,12 @@ def grundy(n: int, memo: Dict[int, int] | None = None) -> int:
         return 0
 
     reachable = set()
-    # remove one pin
     for i in range(n):
         left = i
         right = n - i - 1
         g = grundy(left, memo) ^ grundy(right, memo)
         reachable.add(g)
 
-    # remove two adjacent pins
     for i in range(n - 1):
         left = i
         right = n - i - 2
@@ -63,5 +61,4 @@ def grundy_sequence(N: int) -> List[int]:
 
 
 if __name__ == "__main__":
-    # quick smoke run
     print(grundy_sequence(20))
