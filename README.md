@@ -1,7 +1,6 @@
 # sparse-ruler-n-p-position
 
-programs to check game positions and Grundy numbers. no AI/ML—just plain code.
-
+programs to check game positions and Grundy numbers
 ## main bits
 - `sparse.n.p-position.py`: sparse ruler N/P and Grundy, can emit DOT/PNG trees.
 - `grundy#Kayle/`: Kayles Grundy calculator + small CLI (first test case to apply to sparse)
