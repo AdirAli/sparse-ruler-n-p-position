@@ -4,7 +4,6 @@ programs to check game positions and Grundy numbers
 ## main bits
 - `sparse.n.p-position.py`: sparse ruler N/P and Grundy, can emit DOT/PNG trees.
 - `grundy#Kayle/`: Kayles Grundy calculator + small CLI (first test case to apply to sparse)
-- `scripts/`: helpers for batch Grundy, DOT export, bitmask solver
 
 ## run quick
 ```bash
